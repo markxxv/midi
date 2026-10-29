@@ -1,4 +1,5 @@
-import { parseMidi as readMidi } from 'midi-file';
+import midiFile from 'midi-file';
+const { parseMidi: readMidi } = midiFile;
 import { pitchRange } from './utils.js';
 
 const DEFAULT_TEMPO = 500000; // Microseconds per quarter note.
