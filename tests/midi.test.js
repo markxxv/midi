@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { writeMidi } from 'midi-file';
+import midiFile from 'midi-file';
+const { writeMidi } = midiFile;
 import { createTempoMap, demoMidi, parseMidi } from '../src/midi.js';
 
 function encode(tracks) {
