@@ -200,7 +200,7 @@ export class MidiVisualizer {
 
   setSong(song) {
     this.song = song;
-    this.maxDuration = song.notes.reduce((max, note) => Math.min(20, Math.max(max, note.duration)), 4);
+    this.maxDuration = song?.notes.reduce((max, note) => Math.min(20, Math.max(max, note.duration)), 4) ?? 8;
     this.constructWorld();
   }
 

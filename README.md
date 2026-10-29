@@ -1,8 +1,6 @@
 # LUMEN — MIDI Visual Studio
 
-A cinematic, browser-native MIDI visualizer with **glowing 3D notes, animated piano keys, impact particles, synchronized synthesized audio, and video recording with sound**.
-
-![Stack](https://img.shields.io/badge/Three.js-WebGL-927bff) ![Stack](https://img.shields.io/badge/Web_Audio-Synth-55dacf) ![Stack](https://img.shields.io/badge/Vite-7-8678eb)
+Browser-based 3D MIDI visualizer, sampled grand-piano player, playlist, and synchronized audio/video recorder.
 
 ## Run
 
@@ -13,62 +11,53 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite (usually http://localhost:5173).
+For production: `npm run build`. For tests: `npm test`.
 
-```bash
-npm test
-npm run build
-npm run preview
-```
+## Piano audio
 
-## Features
+- **No ToneJS or oscillator synthesizer**: uses [smplr](https://github.com/danigb/smplr) and its **SplendidGrandPiano** (four velocity layers of recorded Steinway grand-piano samples).
+- Human-like key dynamics are derived from the original MIDI velocity.
+- Stereo convolution reverb has a gentle **16% default wet level**, adjustable between 0% and 50%.
+- The same Web Audio output is sent to the speakers and video capture, so **recorded video includes the piano and the reverb**.
+- MIDI tempo changes and sustain-pedal CC64 are handled; drum-channel (channel 10) events are skipped in piano mode.
+- Samples are **downloaded on first playback** and hosted externally. An internet connection is required when they have not been cached by the browser. The engine displays download progress and errors instead of silently switching to beeps.
+- The Steinway sample pack is from [sfzinstruments-splendid-grand-piano](https://github.com/smpldsnds/sfzinstruments-splendid-grand-piano), **public domain**, originally distributed by AKAI. Samples are owned/licensed independently of this app.
 
-- Import **.mid / .midi** via file picker or drag and drop; parsing stays in the browser.
-- Two generated MIDI arrangements (**Midnight Drive** and **Glass Horizon**) and an imported **Nocturne Op. 9 No. 2** demo (preserved from the repository's existing `demo.mid`).
-- WebGL note highway with pitch lanes, moving note bars proportional to duration, illuminated keys, 3D piano, reactive light impacts, particles, and floating stars.
-- Four palettes: Aurora, Ember, Ocean, Mono. Bloom, note speed, camera drift, particles.
-- Audio-clock synchronization, polyphonic Web Audio synthesizer, seek, volume, start/pause/stop.
-- Canvas ratios: **16:9**, **9:16**, **1:1**. Export to **720p / 1080p**, **30 / 60 FPS**.
-- Exports a video **with audio** using `HTMLCanvasElement.captureStream()`, `MediaStreamAudioDestinationNode`, and `MediaRecorder`. Downloads **WebM** (most Chromium browsers) or **MP4** when supported by the browser.
+## MIDI playlist
 
-## Project structure
+- Drag and drop **multiple `.mid` / `.midi` files** anywhere on the page or use **Add MIDI files** (multi-select).
+- Imported MIDI files are added **in the order selected** and remain in memory during the current browser session.
+- Playlist shows title and duration; select any file to play it.
+- **Previous / Next** buttons, **Autoplay next** switch (enabled by default), remove individual entry, clear playlist.
+- Built-in example arrangements and included `demo.mid` can also be added to the playlist.
+- Each file can contain multiple MIDI tracks; they are performed together on the acoustic grand piano.
+- Limit: 200 files per playlist and 15 MB per MIDI file. Invalid files are reported and skipped.
+- The player stops when the last track finishes (does not loop the playlist).
 
-| Path | Responsibility |
+## Visuals and export
+
+- Three.js 3D falling notes and piano, UnrealBloomPass bloom, key glows, impact particles and camera drift.
+- Four palettes: Aurora, Ember, Ocean, Mono. Control note travel and bloom intensity.
+- Canvas formats **16:9**, **9:16**, **1:1**; **720p / 1080p** and **30 / 60 FPS**.
+- **Record Video** records the currently selected MIDI, beginning at 00:00. Captures the same Web Audio graph, including reverb. Automatically saves when the file finishes, or use **Stop & Save**.
+- Uses MediaRecorder. Format is browser-dependent (usually WebM, MP4 when supported); capture occurs in real time. Keep the tab visible during capture to avoid browser throttling.
+
+## Structure
+
+| File | Purpose |
 | --- | --- |
-| `src/midi.js` | Import/normalize MIDI and generate demos |
-| `src/audio.js` | AudioContext clock, polyphonic synthesis and audio capture stream |
-| `src/visualizer.js` | Three.js scene, note objects, piano, effects and rendering |
-| `src/recorder.js` | Video and audio capture, encoding, download |
-| `src/main.js` | Application state, playback transport and controls |
-| `src/style.css` | Responsive studio UI |
+| `src/midi.js` | Read and normalize Standard MIDI Files, tempo and pedal handling, built-in demos |
+| `src/audio.js` | Sampled grand piano, reverb, shared audio clock and capture stream |
+| `src/playlist.js` | In-memory playlist selection/removal/navigation |
+| `src/visualizer.js` | Three.js piano roll and stage effects |
+| `src/recorder.js` | Browser video and audio export |
+| `src/main.js` | UI, controls, playlist playback and keyboard shortcuts |
+| `src/style.css` | Responsive interface |
 
-## Recording details
+The visualizer's positions come from `AudioContext.currentTime` rather than the visual frame counter. A short lookahead schedules musical events and follows exact tempo changes.
 
-1. Import a MIDI or select a demo.
-2. Pick a color palette and adjust visual effects.
-3. Select the canvas ratio, resolution, and frame rate.
-4. Press **Record video**. Recording starts from the beginning and automatically stops when the arrangement completes; **Stop & Save** exports a partial recording.
-5. Keep the browser tab **visible** during capture, because browsers may throttle WebGL and animation in background tabs.
-
-Recording runs **in real time**, and the resulting file is encoded using codecs available in the browser. For best results, use desktop **Chrome or Edge**; modern Safari may use a different output format. Browser support, GPU capability, and performance influence capture quality. This is **not** offline deterministic Remotion rendering, frame-by-frame encoding, or an MP4 guarantee.
-
-The built-in Web Audio instruments are **synthesized approximations**, not General MIDI soundfonts; drum channels are rendered as pitched synthesized events. The MIDI file itself never leaves the browser. For authentic instrument playback or production-grade offline export, add a licensed SoundFont/sampler and a WebCodecs/FFmpeg or Remotion renderer as a later engine.
-
-## Controls
-
-- **Space**: play/pause (when not focused on a control)
-- **Seek bar**: drag to any point
-- **Restart**: rewind to 00:00
-- **Stop**: stop and rewind
-- **Record video**: begin recording
-- **Stop & Save**: finish current recording and download
-
-## Implementation notes
-
-The Web Audio `AudioContext.currentTime` clock is the playback source of truth. A 25 ms scheduler schedules oscillator events roughly 200 ms in advance; Three.js visual positions are computed from the same clock on every animation frame. Recording combines the WebGL canvas capture track with the Web Audio graph's MediaStream track.
-
-This is an original implementation. The visualization approach was informed by [THREE-MIDI-Visualizer](https://github.com/Brackets-Coder/THREE-MIDI-Visualizer); it does not copy that project's source code.
+This is an original implementation inspired by the visual approach of [THREE-MIDI-Visualizer](https://github.com/Brackets-Coder/THREE-MIDI-Visualizer). It doesn't copy that project's source code.
 
 ## License
 
-MIT.
+Application code: MIT. External piano recordings: public domain (AKAI Splendid Grand); package smplr: MIT.

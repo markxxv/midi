@@ -18,18 +18,21 @@
     <aside class="left-panel panel">
       <div class="panel-head"><span class="eyebrow">01 / SOURCE</span><span class="panel-glyph">⌁</span></div>
       <h2>Sound to<br><em>spectacle.</em></h2>
-      <p class="panel-intro">Drop a MIDI file. Make every note a light show.</p>
+      <p class="panel-intro">Drop a whole MIDI playlist. Make every note a light show.</p>
       <label class="dropzone" id="dropzone" for="file-input">
-        <input id="file-input" type="file" accept=".mid,.midi,audio/midi,audio/x-midi" hidden />
-        <span class="upload-icon">⇧</span><strong>Import MIDI</strong><small>DRAG & DROP OR BROWSE</small>
+        <input id="file-input" type="file" accept=".mid,.midi,audio/midi,audio/x-midi" multiple hidden />
+        <span class="upload-icon">⇧</span><strong>Add MIDI files</strong><small>MULTIPLE FILES · DRAG & DROP</small>
       </label>
       <div class="section-label"><span>DEMO SESSIONS</span><span>03</span></div>
       <button class="demo-item selected" data-demo="midnight"><span class="demo-cover cover-a">✳</span><span class="demo-copy"><b>Midnight Drive</b><small>SYNTH / CINEMATIC</small></span><span class="demo-arrow">↗</span></button>
       <button class="demo-item" data-demo="glass"><span class="demo-cover cover-b">✧</span><span class="demo-copy"><b>Glass Horizon</b><small>AMBIENT / MODERN</small></span><span class="demo-arrow">↗</span></button>
       <button class="demo-item" data-demo="nocturne"><span class="demo-cover cover-b">♫</span><span class="demo-copy"><b>Nocturne Op. 9 No. 2</b><small>CLASSICAL / MIDI FILE</small></span><span class="demo-arrow">↗</span></button>
-      <div class="section-label tracks-label"><span>TRACKS</span><span id="track-count">—</span></div>
+      <div class="section-label playlist-head"><span>PLAYLIST <span id="playlist-count">00</span></span><button id="playlist-clear" title="Clear playlist">CLEAR</button></div>
+      <div id="playlist-list" class="playlist-list" aria-label="MIDI playlist"></div>
+      <label class="playlist-auto"><input id="autoplay-next" type="checkbox" checked /><span>AUTOPLAY NEXT</span></label>
+      <div class="section-label tracks-label"><span>PIANO TRACKS</span><span id="track-count">—</span></div>
       <div id="track-list" class="track-list"></div>
-      <div class="left-footer"><div class="status-pulse"></div><span>ENGINE READY</span><span class="engine-label">WEBGL / AUDIO</span></div>
+      <div class="left-footer"><div class="status-pulse"></div><span id="engine-status">PIANO READY TO LOAD</span><span class="engine-label">WEBGL / AUDIO</span></div>
     </aside>
     <main class="center-panel">
       <div class="stage-toolbar">
@@ -48,9 +51,11 @@
       </section>
       <div class="transport">
         <div class="transport-controls">
+          <button class="icon-button" id="previous" title="Previous MIDI">⏮</button>
           <button class="icon-button rewind" id="restart" title="Restart">↶</button>
           <button class="play-button" id="play" title="Play / Pause"><span id="play-icon">▶</span></button>
           <button class="icon-button" id="stop" title="Stop">■</button>
+          <button class="icon-button" id="next" title="Next MIDI">⏭</button>
         </div>
         <div class="timeline"><div class="timeline-head"><span id="current-time">00:00</span><span class="timeline-label">PLAYHEAD / TIMELINE</span><span id="total-time">00:00</span></div><input id="seek" type="range" min="0" max="1000" value="0" aria-label="Seek" /><div class="ruler"><span>00</span><span>25</span><span>50</span><span>75</span><span>100</span></div></div>
         <div class="volume"><span>♫</span><input id="volume" type="range" min="0" max="100" value="75" aria-label="Volume" /></div>
@@ -69,13 +74,17 @@
           <button class="theme-swatch" data-theme="mono" title="Mono"><span style="--swatch:#f4f3ee"></span><small>MONO</small></button>
         </div>
       </div>
-      <div class="setting-section"><div class="section-label"><span>LIGHT ENGINE</span><span>02</span></div>
+      <div class="setting-section audio-section"><div class="section-label"><span>GRAND PIANO</span><span>02</span></div>
+        <div class="piano-indicator"><span>♫</span><div><strong>SPLENDID GRAND</strong><small>STEINWAY · 4 VELOCITY LAYERS</small></div></div>
+        <div class="slider-group"><label for="reverb">Room reverb <output id="reverb-value">16%</output></label><input type="range" id="reverb" min="0" max="50" step="1" value="16" /></div>
+      </div>
+      <div class="setting-section"><div class="section-label"><span>LIGHT ENGINE</span><span>03</span></div>
         <div class="slider-group"><label for="glow">Bloom intensity <output id="glow-value">1.4</output></label><input type="range" id="glow" min="0" max="2.5" step="0.1" value="1.4" /></div>
         <div class="slider-group"><label for="speed">Note travel <output id="speed-value">3.6</output></label><input type="range" id="speed" min="1.5" max="6" step="0.1" value="3.6" /></div>
         <div class="toggle-row"><span>Impact particles<small>ENERGY ON EACH KEYSTROKE</small></span><label class="switch"><input id="particles" type="checkbox" checked /><span></span></label></div>
         <div class="toggle-row"><span>Camera movement<small>SUBTLE CINEMATIC DRIFT</small></span><label class="switch"><input id="camera-motion" type="checkbox" checked /><span></span></label></div>
       </div>
-      <div class="setting-section"><div class="section-label"><span>OUTPUT FORMAT</span><span>03</span></div>
+      <div class="setting-section"><div class="section-label"><span>OUTPUT FORMAT</span><span>04</span></div>
         <label class="field-label">Canvas ratio</label>
         <div class="segmented" id="ratio-select"><button data-ratio="16:9" class="active">16:9</button><button data-ratio="9:16">9:16</button><button data-ratio="1:1">1:1</button></div>
         <label class="field-label" for="quality">Video resolution</label>
