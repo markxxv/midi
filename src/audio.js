@@ -66,6 +66,14 @@ export class AudioEngine {
             destination: this.input,
             volume: 100,
             maxVoices: 128,
+            // Load a spaced subset of the 4-layer Steinway library instead of
+            // downloading every key at startup. Remaining keys are pitch-shifted
+            // by at most one semitone from the nearest loaded sample.
+            notesToLoad: {
+              notes: Array.from({ length: 30 }, (_, i) => 21 + i * 3).filter(pitch => pitch <= 108),
+              velocityRange: [1, 127],
+              fallback: 'nearest',
+            },
             onLoadProgress: ({ loaded, total }) => {
               if (total) this.onStatus?.('Loading piano ' + Math.round(loaded / total * 100) + '%');
             },
