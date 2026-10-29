@@ -18,7 +18,8 @@ export function normalizeMidi(midi, fallbackName = 'UNTITLED SESSION') {
   }));
   const notes = tracks.flatMap(track => track.notes).sort((a, b) => a.time - b.time);
   if (!notes.length) throw new Error('This MIDI file has no playable notes.');
-  const lastNote = Math.max(...notes.map(note => note.time + note.duration));
+  let lastNote = 0;
+  for (const note of notes) lastNote = Math.max(lastNote, note.time + note.duration);
   return {
     name: (midi.name || fallbackName).replace(/\.midi?$/i, '').trim().slice(0, 64) || fallbackName,
     bpm: Math.round(midi.header.tempos?.[0]?.bpm || 120),

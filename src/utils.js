@@ -16,9 +16,12 @@ export function lowerBound(notes, time) {
 
 export function pitchRange(notes) {
   if (!notes.length) return { min: 36, max: 96 };
-  const pitches = notes.map(note => note.midi);
-  const low = Math.min(...pitches);
-  const high = Math.max(...pitches);
+  let low = 127;
+  let high = 0;
+  for (const note of notes) {
+    low = Math.min(low, note.midi);
+    high = Math.max(high, note.midi);
+  }
   let min = Math.max(21, low - 4);
   let max = Math.min(108, high + 4);
   if (max - min < 48) {

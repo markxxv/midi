@@ -89,10 +89,16 @@ async function loadFile(file) {
   }
 }
 
-function chooseDemo(kind) {
+async function chooseDemo(kind) {
   if (recorder.recording) return;
   try {
-    installSong(demoMidi(kind));
+    if (kind === 'nocturne') {
+      const response = await fetch('/demo.mid');
+      if (!response.ok) throw new Error('Could not load the Nocturne demo.');
+      installSong(parseMidi(await response.arrayBuffer(), 'Nocturne Op. 9 No. 2.mid'));
+    } else {
+      installSong(demoMidi(kind));
+    }
     $$('.demo-item').forEach(button => button.classList.toggle('selected', button.dataset.demo === kind));
   } catch (error) { toast(error.message); }
 }

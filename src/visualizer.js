@@ -200,7 +200,7 @@ export class MidiVisualizer {
 
   setSong(song) {
     this.song = song;
-    this.maxDuration = Math.min(20, Math.max(4, ...song.notes.map(n => n.duration)));
+    this.maxDuration = song.notes.reduce((max, note) => Math.min(20, Math.max(max, note.duration)), 4);
     this.constructWorld();
   }
 
@@ -245,6 +245,7 @@ export class MidiVisualizer {
     if (w < 1 || h < 1) return;
     this.renderer.setPixelRatio(this.exportSize ? 1 : Math.min(window.devicePixelRatio || 1, 1.65));
     this.renderer.setSize(w, h, false);
+    this.composer.setPixelRatio(this.renderer.getPixelRatio());
     this.composer.setSize(w, h);
     const aspect = w / h;
     this.camera.aspect = aspect;
@@ -337,7 +338,6 @@ export class MidiVisualizer {
     this.observe.disconnect();
     this.noteGeometry.dispose();
     for (const mat of this.noteMaterials) mat.dispose();
-    this.pulsePool?.forEach(mesh => mesh.geometry.dispose());
     this.scene.traverse(object => {
       if (object.geometry) object.geometry.dispose();
       if (object.material) {

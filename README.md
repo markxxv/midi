@@ -8,39 +8,39 @@ A cinematic, browser-native MIDI visualizer with **glowing 3D notes, animated pi
 
 Requires Node.js 20.19+ or 22.12+.
 
-\`\`\`bash
+```bash
 npm install
 npm run dev
-\`\`\`
+```
 
 Open the local URL printed by Vite (usually http://localhost:5173).
 
-\`\`\`bash
+```bash
 npm test
 npm run build
 npm run preview
-\`\`\`
+```
 
 ## Features
 
 - Import **.mid / .midi** via file picker or drag and drop; parsing stays in the browser.
-- Two generated MIDI demo arrangements on first load: **Midnight Drive** and **Glass Horizon**.
+- Two generated MIDI arrangements (**Midnight Drive** and **Glass Horizon**) and an imported **Nocturne Op. 9 No. 2** demo (preserved from the repository's existing `demo.mid`).
 - WebGL note highway with pitch lanes, moving note bars proportional to duration, illuminated keys, 3D piano, reactive light impacts, particles, and floating stars.
 - Four palettes: Aurora, Ember, Ocean, Mono. Bloom, note speed, camera drift, particles.
 - Audio-clock synchronization, polyphonic Web Audio synthesizer, seek, volume, start/pause/stop.
 - Canvas ratios: **16:9**, **9:16**, **1:1**. Export to **720p / 1080p**, **30 / 60 FPS**.
-- Exports a video **with audio** using \`HTMLCanvasElement.captureStream()\`, \`MediaStreamAudioDestinationNode\`, and \`MediaRecorder\`. Downloads **WebM** (most Chromium browsers) or **MP4** when supported by the browser.
+- Exports a video **with audio** using `HTMLCanvasElement.captureStream()`, `MediaStreamAudioDestinationNode`, and `MediaRecorder`. Downloads **WebM** (most Chromium browsers) or **MP4** when supported by the browser.
 
 ## Project structure
 
 | Path | Responsibility |
 | --- | --- |
-| \`src/midi.js\` | Import/normalize MIDI and generate demos |
-| \`src/audio.js\` | AudioContext clock, polyphonic synthesis and audio capture stream |
-| \`src/visualizer.js\` | Three.js scene, note objects, piano, effects and rendering |
-| \`src/recorder.js\` | Video and audio capture, encoding, download |
-| \`src/main.js\` | Application state, playback transport and controls |
-| \`src/style.css\` | Responsive studio UI |
+| `src/midi.js` | Import/normalize MIDI and generate demos |
+| `src/audio.js` | AudioContext clock, polyphonic synthesis and audio capture stream |
+| `src/visualizer.js` | Three.js scene, note objects, piano, effects and rendering |
+| `src/recorder.js` | Video and audio capture, encoding, download |
+| `src/main.js` | Application state, playback transport and controls |
+| `src/style.css` | Responsive studio UI |
 
 ## Recording details
 
@@ -65,7 +65,7 @@ The built-in Web Audio instruments are **synthesized approximations**, not Gener
 
 ## Implementation notes
 
-The Web Audio \`AudioContext.currentTime\` clock is the playback source of truth. A 25 ms scheduler schedules oscillator events roughly 200 ms in advance; Three.js visual positions are computed from the same clock on every animation frame. Recording combines the WebGL canvas capture track with the Web Audio graph's MediaStream track.
+The Web Audio `AudioContext.currentTime` clock is the playback source of truth. A 25 ms scheduler schedules oscillator events roughly 200 ms in advance; Three.js visual positions are computed from the same clock on every animation frame. Recording combines the WebGL canvas capture track with the Web Audio graph's MediaStream track.
 
 This is an original implementation. The visualization approach was informed by [THREE-MIDI-Visualizer](https://github.com/Brackets-Coder/THREE-MIDI-Visualizer); it does not copy that project's source code.
 
