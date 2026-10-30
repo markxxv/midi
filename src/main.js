@@ -114,12 +114,6 @@ function displaySong(value) {
   const title = song ? song.name.toUpperCase() : 'NO MIDI LOADED';
   $('#top-file').textContent = title;
   $('#stage-filename').textContent = title;
-  $('#overlay-title').textContent = title;
-  $('#overlay-bpm').textContent = song ? song.bpm + ' BPM' : '— BPM';
-  $('#overlay-subtitle').textContent = song
-    ? song.tracks.length + ' TRACKS / ' + song.notes.length.toLocaleString() + ' EVENTS'
-    : 'ADD FILES OR CHOOSE A DEMO';
-  $('#stage-note-count').textContent = song ? song.notes.length.toLocaleString() + ' NOTES' : '00 NOTES';
   $('#total-time').textContent = formatTime(song?.duration || 0);
   $('#current-time').textContent = '00:00';
   $('#seek').value = '0';
@@ -325,6 +319,11 @@ function bindEvents() {
     visualizer.setGlow(value);
     $('#glow-value').textContent = value.toFixed(1);
   });
+  $('#grain').addEventListener('input', event => {
+    const percent = Number(event.target.value);
+    visualizer.setGrain(percent / 100);
+    $('#grain-value').textContent = percent ? percent + '%' : 'Off';
+  });
   $('#speed').addEventListener('input', event => {
     const value = Number(event.target.value);
     visualizer.setSpeed(value);
@@ -346,6 +345,28 @@ function bindEvents() {
   }));
   $('#export').addEventListener('click', toggleRecord);
   $('#header-export').addEventListener('click', toggleRecord);
+
+  const stage = $('#stage-shell');
+  const fullscreenButton = $('#fullscreen-toggle');
+  fullscreenButton.addEventListener('click', async () => {
+    try {
+      if (document.fullscreenElement === stage) await document.exitFullscreen();
+      else await stage.requestFullscreen();
+    } catch (error) {
+      console.error('Fullscreen failed:', error);
+      toast('Full screen is not available in this browser.');
+    }
+  });
+  document.addEventListener('fullscreenchange', () => {
+    const active = document.fullscreenElement === stage;
+    stage.classList.toggle('is-fullscreen', active);
+    fullscreenButton.textContent = active ? '✕' : '⛶';
+    fullscreenButton.title = active ? 'Exit full screen' : 'Full screen';
+    fullscreenButton.setAttribute('aria-label', fullscreenButton.title);
+    fullscreenButton.setAttribute('aria-pressed', String(active));
+    // Fullscreen switches the stage layout; update both camera and post-FX dimensions.
+    requestAnimationFrame(() => visualizer.resize());
+  });
 
   const drop = $('#dropzone');
   document.addEventListener('dragover', event => {
