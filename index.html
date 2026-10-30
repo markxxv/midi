@@ -41,11 +41,8 @@
       </div>
       <section class="stage-shell" id="stage-shell">
         <div id="viewport" class="viewport"></div>
-        <div class="stage-vignette"></div>
-        <div class="stage-overlay">
-          <div class="stage-topline"><span class="stage-marker">✳ &nbsp; LUMEN / SESSION 001</span><span class="stage-marker" id="overlay-bpm">128 BPM</span></div>
-          <div class="stage-headline"><small>CURRENTLY VISUALIZING</small><strong id="overlay-title">MIDNIGHT DRIVE</strong><span id="overlay-subtitle">A STUDY IN LIGHT & SOUND</span></div>
-          <div class="stage-bottomline"><span>GENERATIVE MUSIC VISUALIZATION</span><span id="stage-note-count">00 NOTES</span></div>
+        <div class="stage-actions">
+          <button id="fullscreen-toggle" class="stage-fullscreen" type="button" title="Full screen" aria-label="Enter full screen" aria-pressed="false">⛶</button>
         </div>
         <div class="recording-indicator" id="recording-indicator" hidden><span class="record-pulse"></span> RECORDING <span id="recording-time">00:00</span></div>
       </section>
@@ -80,6 +77,7 @@
       </div>
       <div class="setting-section"><div class="section-label"><span>LIGHT ENGINE</span><span>03</span></div>
         <div class="slider-group"><label for="glow">Bloom intensity <output id="glow-value">1.4</output></label><input type="range" id="glow" min="0" max="2.5" step="0.1" value="1.4" /></div>
+        <div class="slider-group"><label for="grain">Film grain <output id="grain-value">3%</output></label><input type="range" id="grain" min="0" max="12" step="1" value="3" aria-label="Film grain opacity; zero disables grain" /></div>
         <div class="slider-group"><label for="speed">Note travel <output id="speed-value">3.6</output></label><input type="range" id="speed" min="1.5" max="6" step="0.1" value="3.6" /></div>
         <div class="toggle-row"><span>Impact particles<small>ENERGY ON EACH KEYSTROKE</small></span><label class="switch"><input id="particles" type="checkbox" checked /><span></span></label></div>
         <div class="toggle-row"><span>Camera movement<small>SUBTLE CINEMATIC DRIFT</small></span><label class="switch"><input id="camera-motion" type="checkbox" checked /><span></span></label></div>
