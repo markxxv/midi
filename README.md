@@ -37,6 +37,9 @@ For production: `npm run build`. For tests: `npm test`.
 ## Visuals and export
 
 - Three.js 3D falling notes and piano, UnrealBloomPass bloom, key glows, impact particles and camera drift.
+- Clean cinematic stage with no in-frame titles or HUD labels. Fullscreen stage preview via the corner button (Esc exits).
+- Rounded piano keys and multi-sample antialiasing with FXAA cleanup in the EffectComposer.
+- Fine monochrome film grain in the render pipeline, adjustable 0–12% (0% completely disables the pass). Grain is also visible in exported video; fullscreen UI is not.
 - Four palettes: Aurora, Ember, Ocean, Mono. Control note travel and bloom intensity.
 - Canvas formats **16:9**, **9:16**, **1:1**; **720p / 1080p** and **30 / 60 FPS**.
 - **Record Video** records the currently selected MIDI, beginning at 00:00. Captures the same Web Audio graph, including reverb. Automatically saves when the file finishes, or use **Stop & Save**.
