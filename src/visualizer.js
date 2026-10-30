@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { lowerBound, clamp } from './utils.js';
 
 const THEMES = {
@@ -16,6 +19,36 @@ const NOTE_POOL_SIZE = 650;
 const PARTICLES_PER_HIT = 5;
 const PARTICLE_CAP = 700;
 
+// Fine, monochromatic grain applied AFTER bloom and antialiasing so it remains
+// at output resolution and is captured in recordings. The 0 setting bypasses it.
+const FilmGrainShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    amount: { value: 0.03 },
+    frame: { value: 0 },
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D tDiffuse;
+    uniform float amount;
+    uniform float frame;
+    varying vec2 vUv;
+    void main() {
+      vec4 color = texture2D(tDiffuse, vUv);
+      float noise = fract(sin(dot(gl_FragCoord.xy + vec2(frame * 3.1, frame * 7.9), vec2(12.9898, 78.233))) * 43758.5453);
+      float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
+      float grain = (noise - 0.5) * amount * (0.45 + min(luminance, 1.0) * 0.55);
+      gl_FragColor = vec4(clamp(color.rgb + grain, 0.0, 1.0), color.a);
+    }
+  `,
+};
+
 function line(from, to, color, opacity = .3) {
   return new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...from), new THREE.Vector3(...to)]),
     new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthWrite: false }));
@@ -26,6 +59,7 @@ export class MidiVisualizer {
     this.host = element;
     this.speed = 3.6;
     this.glow = 1.4;
+    this.grain = 0.03;
     this.particlesEnabled = true;
     this.motionEnabled = true;
     this.themeName = 'aurora';
@@ -46,13 +80,26 @@ export class MidiVisualizer {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.3;
     this.renderer.setClearColor(this.theme.background);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.65));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.domElement.setAttribute('aria-label', 'Animated three-dimensional MIDI piano roll');
     this.host.appendChild(this.renderer.domElement);
-    this.composer = new EffectComposer(this.renderer);
+    // Default canvas antialiasing does not smooth EffectComposer's offscreen
+    // render targets; MSAA on the actual composer target fixes piano key edges.
+    const target = new THREE.WebGLRenderTarget(1, 1, {
+      type: THREE.HalfFloatType,
+      samples: 4,
+      depthBuffer: true,
+      stencilBuffer: false,
+    });
+    this.composer = new EffectComposer(this.renderer, target);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
     this.bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), this.glow, .75, .2);
     this.composer.addPass(this.bloomPass);
+    // FXAA is the edge-cleanup fallback for remaining fine detail.
+    this.fxaaPass = new ShaderPass(FXAAShader);
+    this.composer.addPass(this.fxaaPass);
+    this.grainPass = new ShaderPass(FilmGrainShader);
+    this.composer.addPass(this.grainPass);
     this.scene.add(new THREE.AmbientLight(0xadb6ff, 1.2));
     const lamp = new THREE.PointLight(0x9188ff, 85, 65);
     lamp.position.set(0, 9, 4);
@@ -182,7 +229,13 @@ export class MidiVisualizer {
         emissive: new THREE.Color(this.theme.colors[pitch % 5]),
         emissiveIntensity: .025, metalness: .25, roughness: .4,
       });
-      const key = new THREE.Mesh(new THREE.BoxGeometry(this.laneWidth * (isBlack ? .65 : .91), isBlack ? .47 : .23, isBlack ? 1.75 : 2.6), material);
+      const key = new THREE.Mesh(new RoundedBoxGeometry(
+        this.laneWidth * (isBlack ? .65 : .91),
+        isBlack ? .47 : .23,
+        isBlack ? 1.75 : 2.6,
+        3,
+        Math.min(this.laneWidth * .07, isBlack ? .02 : .025),
+      ), material);
       key.position.set(this.pitchX(pitch), isBlack ? .15 : 0, isBlack ? HIT_Z + .76 : HIT_Z + 1.35);
       this.keys.push({ pitch, key, baseY: key.position.y });
       this.world.add(key);
@@ -224,6 +277,11 @@ export class MidiVisualizer {
   }
 
   setGlow(value) { this.glow = value; this.bloomPass.strength = value; }
+  setGrain(value) {
+    this.grain = clamp(value, 0, 0.12);
+    this.grainPass.enabled = this.grain > 0;
+    this.grainPass.uniforms.amount.value = this.grain;
+  }
   setParticles(value) { this.particlesEnabled = Boolean(value); this.particleCloud.visible = this.particlesEnabled; }
   setMotion(value) { this.motionEnabled = Boolean(value); }
 
@@ -243,10 +301,12 @@ export class MidiVisualizer {
     const w = this.exportSize?.width || Math.max(1, this.host.clientWidth);
     const h = this.exportSize?.height || Math.max(1, this.host.clientHeight);
     if (w < 1 || h < 1) return;
-    this.renderer.setPixelRatio(this.exportSize ? 1 : Math.min(window.devicePixelRatio || 1, 1.65));
+    const pixelRatio = this.exportSize ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+    this.renderer.setPixelRatio(pixelRatio);
     this.renderer.setSize(w, h, false);
-    this.composer.setPixelRatio(this.renderer.getPixelRatio());
+    this.composer.setPixelRatio(pixelRatio);
     this.composer.setSize(w, h);
+    this.fxaaPass.material.uniforms.resolution.value.set(1 / (w * pixelRatio), 1 / (h * pixelRatio));
     const aspect = w / h;
     this.camera.aspect = aspect;
     this.camera.position.set(0, aspect < .85 ? 21 : aspect < 1.25 ? 16 : 13.5, aspect < .85 ? 32 : aspect < 1.25 ? 27 : 21);
@@ -329,6 +389,7 @@ export class MidiVisualizer {
     this.camera.position.x = drift;
     this.camera.lookAt(0, 0, this.ratio === '9:16' ? -4 : -5);
     this.stars.rotation.y = Math.sin(time * .05) * .025;
+    if (this.grainPass.enabled) this.grainPass.uniforms.frame.value = Math.floor(performance.now() / 33.33);
     this.composer.render();
   }
 
