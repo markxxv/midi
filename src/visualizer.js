@@ -3,6 +3,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { lowerBound, clamp } from './utils.js';
@@ -100,6 +101,8 @@ export class MidiVisualizer {
     this.composer.addPass(this.fxaaPass);
     this.grainPass = new ShaderPass(FilmGrainShader);
     this.composer.addPass(this.grainPass);
+    // OutputPass applies the renderer's tone mapping and sRGB conversion.
+    this.composer.addPass(new OutputPass());
     this.scene.add(new THREE.AmbientLight(0xadb6ff, 1.2));
     const lamp = new THREE.PointLight(0x9188ff, 85, 65);
     lamp.position.set(0, 9, 4);
